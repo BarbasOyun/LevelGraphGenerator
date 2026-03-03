@@ -1,0 +1,11 @@
+[package]
+name = "graph_egui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "0.28"
+egui_graphs = "0.19"
+petgraph = "0.6"
+glam = "0.32.0"
+rand = "0.10.0"

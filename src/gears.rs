@@ -21,3 +21,14 @@ pub fn sphere_pos(latitude: f32, longitude: f32, radius: f32) -> Vec3 {
     let z = latitude.cos() * radius;
     return Vec3::new(x, y, z);
 }
+
+pub fn circle_points(radius: f32, division: u16) -> Vec<Vec2> {
+    let mut points: Vec<Vec2> = vec!{};
+    let point_distance = (std::f32::consts::PI * 2.0) / division as f32;
+
+    for i in 0..division {
+        points.push(circle_pos(radius, point_distance * i as f32));
+    }
+
+    return points;
+}

@@ -10,13 +10,12 @@ use crate::gears;
 //     radius: f32,
 // }
 
-
 pub struct Graph {
     node_nbr: u16,
     node_colors: Vec<egui::Color32>,
     pub nodes: Vec<Node>,
     pub original_area_radius: f32,
-    pub node_area_radius: f32,
+    // pub node_area_radius: f32,
     // edges
 }
 
@@ -40,7 +39,6 @@ impl Default for Graph {
                 },
             ],
             original_area_radius: 0.0,
-            node_area_radius: 0.0,
         }
     }
 }
@@ -52,7 +50,6 @@ impl Graph {
             node_colors: vec![egui::Color32::LIGHT_RED, egui::Color32::LIGHT_BLUE],
             nodes: vec![],
             original_area_radius,
-            node_area_radius,
         }
     }
 
@@ -60,9 +57,6 @@ impl Graph {
         // Generate Base Graph Data Structure for Level
         // First Node is picked Randomly inside a circle
         self.nodes.clear();
-
-        let minimum_distance = self.node_area_radius * 2.;
-        let minimum_distance_squared = &minimum_distance * 2.0; // use distance_squared -> avoid root square
 
         for i in 0..self.node_nbr {
             // Node Base Pos
@@ -78,68 +72,96 @@ impl Graph {
             let radius: f32 = if i == 0 {
                 self.original_area_radius
             } else {
-                rng.random_range(minimum_distance..100.0)
+                // rng.random_range(minimum_distance..100.0)
+                rng.random_range(0.0..100.0)
             };
             let random_progress: f32 = rng.random_range(0.0..std::f32::consts::PI * 2.0);
 
             let node_pos = pos + gears::circle_pos(radius, random_progress);
 
             // Create Node
-            let node = self.create_node(i, node_pos, &minimum_distance_squared);
+            let node = self.create_node(i, node_pos);
             self.nodes.push(node);
         }
     }
 
     pub fn generate_graph_nodes(&mut self) {
         self.nodes.clear();
-
-        let minimum_distance = self.node_area_radius * 2.0; // * 2 -> Exclude Circles
-        // let minimum_distance_squared = &minimum_distance.powf(2.0); // use distance_squared -> avoid root square
+        let mut rng = rand::rng();
 
         for i in 0..self.node_nbr {
-            let pos: Vec2 = Vec2 { x: 0_f32, y: 0_f32 };
-
-            let mut rng = rand::rng();
-
             let radius: f32 = rng.random_range(0.0..self.original_area_radius);
             let random_progress: f32 = rng.random_range(0.0..std::f32::consts::PI * 2.0);
 
-            let node_pos = pos + gears::circle_pos(radius, random_progress);
+            let node_pos = gears::circle_pos(radius, random_progress);
 
-            let node = self.create_node(i, node_pos, &minimum_distance);
+            let node = self.create_node(i, node_pos);
             self.nodes.push(node);
         }
     }
 
-    pub fn create_node(&self, id: u16, node_pos: Vec2, minimum_distance: &f32) -> Node {
-        // Minimum distance between Nodes
-        // println!("Node {id} Start pos = {node_pos} ");
-        let mut final_direction = Vec2 { x: 0.0, y: 0.0 };
-        let mut final_distance: f32 = 0.0;
+    pub fn create_node(&self, id: u16, node_pos: Vec2) -> Node {
+        let mut rng = rand::rng();
+        let radius = rng.random_range(15.0..30.0);
 
-        for n in &self.nodes {
-            let distance = node_pos.distance(n.pos);
-            // println!("{distance} < {minimum_distance}");
-            if distance < *minimum_distance {
-                // let other_id = &n.text;
-                // println!("Node {id} is too close to node {other_id}");
-                let direction = node_pos - n.pos; // Vector existing node -> created node
-                let distance_delta = minimum_distance - distance;
+        // Node Position -> Minimum distance between Nodes
+        let mut adjusted_pos: Vec2 = node_pos;
+        let mut overlapping_nodes = self.find_overlapping_nodes(&adjusted_pos, &radius);
+        let mut count: u8 = 0;
 
-                final_direction += direction;
-                final_distance += distance_delta;
-            }
+        while count < 3 && overlapping_nodes.len() > 0 {
+            adjusted_pos = self.adjust_node_pos(&overlapping_nodes, &adjusted_pos, &radius);
+            overlapping_nodes = self.find_overlapping_nodes(&adjusted_pos, &radius);
+            count += 1;
         }
-
-        let adjusted_pos = node_pos + final_direction.normalize_or_zero() * final_distance;
-        // println!("Node {id} Final Vector : {final_direction}");
-        // println!("Node {id} Final Pos : {adjusted_pos}");
 
         return Node {
             pos: adjusted_pos,
             color: self.node_colors[id as usize % self.node_colors.len()],
             text: String::from(id.to_string()),
-            radius: 20.0,
+            radius,
         };
+    }
+
+    fn find_overlapping_nodes(&self, start_pos: &Vec2, radius: &f32) -> Vec<&Node> {
+        let mut overlapping_nodes: Vec<&Node> = vec![];
+
+        for n in &self.nodes {
+            let distance = start_pos.distance(n.pos);
+            let min_distance = radius + n.radius;
+            // println!("{distance} < {min_distance}");
+
+            if distance < min_distance {
+                overlapping_nodes.push(n);
+            }
+        }
+
+        return overlapping_nodes;
+    }
+
+    fn adjust_node_pos(
+        &self,
+        overlapping_nodes: &Vec<&Node>,
+        start_pos: &Vec2,
+        radius: &f32,
+    ) -> Vec2 {
+        let mut final_direction = Vec2 { x: 0.0, y: 0.0 };
+        let mut final_distance: f32 = 0.0;
+
+        for n in overlapping_nodes {
+            let distance = start_pos.distance(n.pos); // TODO : Avoid recalculating Distance
+            let m_distance = radius + n.radius;
+            // println!("{distance} < {minimum_distance}");
+
+            if distance < m_distance {
+                // let other_id = &n.text;
+                // println!("Node {id} is too close to node {other_id}");
+
+                final_direction += start_pos - n.pos; // Vector existing node -> created node
+                final_distance += m_distance - distance;
+            }
+        }
+
+        return start_pos + final_direction.normalize_or_zero() * final_distance;
     }
 }

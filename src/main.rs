@@ -13,13 +13,6 @@ fn main() -> eframe::Result {
     graph_data.generate_graph_nodes();
     let level_graph_app = build_graph_from_data(graph_data);
 
-    // Circle Drawer App
-    // let circle_points1 = gears::circle_points(100.0, 20);
-    // let circle_points2 = gears::circle_points(150.0, 20);
-    // let circle_points3 = gears::circle_points(200.0, 20);
-    // let circle_drawer = CircleDrawer::new(circle_points1, circle_points2, circle_points3);
-
-    // return start_app(circle_drawer);
     return start_app(level_graph_app);
     // return start_app(LevelGraphApp::default())
 }
@@ -160,56 +153,6 @@ impl eframe::App for LevelGraphApp {
                 .with_layer_id(LayerId::new(Order::Background, response.id));
 
             self.draw_graph(&response, &node_painter, &painter);
-        });
-    }
-}
-
-impl CircleDrawer {
-    fn new(circle_points1: Vec<glam::Vec2>, circle_points2: Vec<glam::Vec2>, circle_points3: Vec<glam::Vec2>) -> Self {
-        Self { label: String::from("Circle Drawer"), circle_points1, circle_points2, circle_points3 }
-    }
-
-    fn draw_circle(&self, painter: &Painter, stroke: Stroke, base_pos: Pos2, circle_points: &Vec<glam::Vec2>) {
-        let draw_circle_edge = |start_pos: glam::Vec2, end_pos: glam::Vec2| {
-            let pos1: Pos2 = base_pos + vec2(start_pos.x, start_pos.y);
-            let pos2: Pos2 = base_pos + vec2(end_pos.x, end_pos.y);
-
-            painter.line_segment([pos1, pos2], stroke);
-        };
-
-        // Draw Edges
-        for index in 0..circle_points.len() - 1 {
-            draw_circle_edge(circle_points[index], circle_points[index + 1]);
-        }
-
-        // Draw Last Edge
-        draw_circle_edge(circle_points[circle_points.len() - 1], circle_points[0]);
-    }
-}
-
-impl eframe::App for CircleDrawer {
-    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
-        CentralPanel::default().show(ctx, |ui| {
-            ui.heading(&self.label);
-
-            if ui.button("Move Circle").clicked() {
-                println!("Move Circle");
-            }
-
-            // Move Circle XY Sliders
-
-            // Create Graph Area
-            let (response, painter) = ui.allocate_painter(
-                ui.available_size(), // Use all remaining space
-                Sense::hover(),
-            );
-
-            let stroke1 = Stroke::new(2.0, Color32::RED);
-            let stroke2 = Stroke::new(2.0, Color32::GREEN);
-            let stroke3 = Stroke::new(2.0, Color32::BLUE);
-            self.draw_circle(&painter, stroke1, response.rect.center(), &self.circle_points1);
-            self.draw_circle(&painter, stroke2, response.rect.center(), &self.circle_points2);
-            self.draw_circle(&painter, stroke3, response.rect.center(), &self.circle_points3);
         });
     }
 }

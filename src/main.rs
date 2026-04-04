@@ -59,13 +59,6 @@ struct LevelGraphApp {
     graph_data: Graph,
 }
 
-struct CircleDrawer {
-    label: String,
-    circle_points1: Vec<glam::Vec2>,
-    circle_points2: Vec<glam::Vec2>,
-    circle_points3: Vec<glam::Vec2>,
-}
-
 impl LevelGraphApp {
     fn draw_edges(&self, i: usize, response: &Response, painter: &Painter, node_pos: Pos2) {
         // Next Node Exist -> Draw Edge (Line)
